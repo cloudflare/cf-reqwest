@@ -342,6 +342,9 @@ if_hyper! {
     pub use self::async_impl::{
         Body, Client, ClientBuilder, Request, RequestBuilder, Response, Upgraded,
     };
+    pub use self::connect::{AsyncConn, BoxConn, AsyncConnWithInfo, GenericConnector, GenericConnectionFut};
+    #[cfg(feature = "__tls")]
+    pub use self::connect::TlsInfoFactory;
     pub use self::proxy::{Proxy,NoProxy};
     #[cfg(feature = "__tls")]
     // Re-exports, to be removed in a future release

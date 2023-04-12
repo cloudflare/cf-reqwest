@@ -1,7 +1,7 @@
 #[cfg(any(feature = "native-tls", feature = "__rustls",))]
 use std::any::Any;
 use std::net::IpAddr;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use std::time::Duration;
 use std::{collections::HashMap, convert::TryInto, net::SocketAddr};
 use std::{fmt, str};
@@ -30,7 +30,7 @@ use super::Body;
 use crate::async_impl::h3_client::connect::H3Connector;
 #[cfg(feature = "http3")]
 use crate::async_impl::h3_client::{H3Client, H3ResponseFuture};
-use crate::connect::Connector;
+use crate::connect::{BaseConnector, Connector, GenericConnector};
 #[cfg(feature = "cookies")]
 use crate::cookie;
 #[cfg(feature = "hickory-dns")]
@@ -167,6 +167,7 @@ struct Config {
     quic_send_window: Option<u64>,
     dns_overrides: HashMap<String, Vec<SocketAddr>>,
     dns_resolver: Option<Arc<dyn Resolve>>,
+    connector: Option<Arc<RwLock<dyn GenericConnector>>>,
 }
 
 impl Default for ClientBuilder {
@@ -265,6 +266,7 @@ impl ClientBuilder {
                 #[cfg(feature = "http3")]
                 quic_send_window: None,
                 dns_resolver: None,
+                connector: None,
             },
         }
     }
@@ -314,8 +316,17 @@ impl ClientBuilder {
                     config.dns_overrides,
                 ));
             }
-            let mut http = HttpConnector::new_with_resolver(DynResolver::new(resolver.clone()));
-            http.set_connect_timeout(config.connect_timeout);
+            let base_connector = match config.connector {
+                Some(connector) => BaseConnector::Custom(connector),
+                None => {
+                    let mut http =
+                        HttpConnector::new_with_resolver(DynResolver::new(resolver.clone()));
+
+                    http.set_connect_timeout(config.connect_timeout);
+
+                    BaseConnector::Http(http)
+                }
+            };
 
             #[cfg(all(feature = "http3", feature = "__rustls"))]
             let build_h3_connector =
@@ -439,7 +450,7 @@ impl ClientBuilder {
                     }
 
                     Connector::new_default_tls(
-                        http,
+                        base_connector,
                         tls,
                         proxies.clone(),
                         user_agent(&config.headers),
@@ -456,7 +467,7 @@ impl ClientBuilder {
                 }
                 #[cfg(feature = "native-tls")]
                 TlsBackend::BuiltNativeTls(conn) => Connector::from_built_default_tls(
-                    http,
+                    base_connector,
                     conn,
                     proxies.clone(),
                     user_agent(&config.headers),
@@ -483,7 +494,7 @@ impl ClientBuilder {
                     }
 
                     Connector::new_rustls_tls(
-                        http,
+                        base_connector,
                         conn,
                         proxies.clone(),
                         user_agent(&config.headers),
@@ -637,7 +648,7 @@ impl ClientBuilder {
                     }
 
                     Connector::new_rustls_tls(
-                        http,
+                        base_connector,
                         tls,
                         proxies.clone(),
                         user_agent(&config.headers),
@@ -662,7 +673,7 @@ impl ClientBuilder {
 
             #[cfg(not(feature = "__tls"))]
             Connector::new(
-                http,
+                base_connector,
                 proxies.clone(),
                 config.local_address,
                 #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
@@ -1806,6 +1817,16 @@ impl ClientBuilder {
     /// still be applied on top of this resolver.
     pub fn dns_resolver<R: Resolve + 'static>(mut self, resolver: Arc<R>) -> ClientBuilder {
         self.config.dns_resolver = Some(resolver as _);
+        self
+    }
+
+    /// Override the HTTP connector implementation.
+    ///
+    /// Pass an `Arc<RwLock>` wrapping a trait object implementing connector.
+    /// TCP socket config options, such as `tcp_nodelay`, will not be applied if custom connector
+    /// is specified.
+    pub fn connector<C: GenericConnector>(mut self, connector: Arc<RwLock<C>>) -> ClientBuilder {
+        self.config.connector = Some(connector as _);
         self
     }
 
