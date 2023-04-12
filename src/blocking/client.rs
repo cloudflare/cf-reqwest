@@ -36,9 +36,9 @@ use crate::{async_impl, header, redirect, IntoUrl, Method, Proxy};
 /// # Examples
 ///
 /// ```rust
-/// use reqwest::blocking::Client;
+/// use cf_reqwest::blocking::Client;
 /// #
-/// # fn run() -> Result<(), reqwest::Error> {
+/// # fn run() -> Result<(), cf_reqwest::Error> {
 /// let client = Client::new();
 /// let resp = client.get("http://httpbin.org/").send()?;
 /// #   drop(resp);
@@ -56,10 +56,10 @@ pub struct Client {
 /// # Example
 ///
 /// ```
-/// # fn run() -> Result<(), reqwest::Error> {
+/// # fn run() -> Result<(), cf_reqwest::Error> {
 /// use std::time::Duration;
 ///
-/// let client = reqwest::blocking::Client::builder()
+/// let client = cf_reqwest::blocking::Client::builder()
 ///     .timeout(Duration::from_secs(10))
 ///     .build()?;
 /// # Ok(())
@@ -98,7 +98,7 @@ impl ClientBuilder {
     /// # Panics
     ///
     /// This method panics if called from within an async runtime. See docs on
-    /// [`reqwest::blocking`][crate::blocking] for details.
+    /// [`cf_reqwest::blocking`][crate::blocking] for details.
     pub fn build(self) -> crate::Result<Client> {
         ClientHandle::new(self).map(|handle| Client { inner: handle })
     }
@@ -110,7 +110,7 @@ impl ClientBuilder {
     /// # Example
     ///
     /// ```rust
-    /// # fn doc() -> Result<(), reqwest::Error> {
+    /// # fn doc() -> Result<(), cf_reqwest::Error> {
     /// // Name your user agent after your app?
     /// static APP_USER_AGENT: &str = concat!(
     ///     env!("CARGO_PKG_NAME"),
@@ -118,7 +118,7 @@ impl ClientBuilder {
     ///     env!("CARGO_PKG_VERSION"),
     /// );
     ///
-    /// let client = reqwest::blocking::Client::builder()
+    /// let client = cf_reqwest::blocking::Client::builder()
     ///     .user_agent(APP_USER_AGENT)
     ///     .build()?;
     /// let res = client.get("https://www.rust-lang.org").send()?;
@@ -138,8 +138,8 @@ impl ClientBuilder {
     /// # Example
     ///
     /// ```rust
-    /// use reqwest::header;
-    /// # fn build_client() -> Result<(), reqwest::Error> {
+    /// use cf_reqwest::header;
+    /// # fn build_client() -> Result<(), cf_reqwest::Error> {
     /// let mut headers = header::HeaderMap::new();
     /// headers.insert("X-MY-HEADER", header::HeaderValue::from_static("value"));
     /// headers.insert(header::AUTHORIZATION, header::HeaderValue::from_static("secret"));
@@ -150,7 +150,7 @@ impl ClientBuilder {
     /// headers.insert(header::AUTHORIZATION, auth_value);
     ///
     /// // get a client builder
-    /// let client = reqwest::blocking::Client::builder()
+    /// let client = cf_reqwest::blocking::Client::builder()
     ///     .default_headers(headers)
     ///     .build()?;
     /// let res = client.get("https://www.rust-lang.org").send()?;
@@ -161,13 +161,13 @@ impl ClientBuilder {
     /// Override the default headers:
     ///
     /// ```rust
-    /// use reqwest::header;
-    /// # fn build_client() -> Result<(), reqwest::Error> {
+    /// use cf_reqwest::header;
+    /// # fn build_client() -> Result<(), cf_reqwest::Error> {
     /// let mut headers = header::HeaderMap::new();
     /// headers.insert("X-MY-HEADER", header::HeaderValue::from_static("value"));
     ///
     /// // get a client builder
-    /// let client = reqwest::blocking::Client::builder()
+    /// let client = cf_reqwest::blocking::Client::builder()
     ///     .default_headers(headers)
     ///     .build()?;
     /// let res = client
@@ -494,7 +494,7 @@ impl ClientBuilder {
     /// ```
     /// use std::net::IpAddr;
     /// let local_addr = IpAddr::from([12, 4, 1, 8]);
-    /// let client = reqwest::blocking::Client::builder()
+    /// let client = cf_reqwest::blocking::Client::builder()
     ///     .local_address(local_addr)
     ///     .build().unwrap();
     /// ```
@@ -533,10 +533,10 @@ impl ClientBuilder {
     /// let der = std::fs::read("my-cert.der")?;
     ///
     /// // create a certificate
-    /// let cert = reqwest::Certificate::from_der(&der)?;
+    /// let cert = cf_reqwest::Certificate::from_der(&der)?;
     ///
     /// // get a client builder
-    /// let client = reqwest::blocking::Client::builder()
+    /// let client = cf_reqwest::blocking::Client::builder()
     ///     .add_root_certificate(cert)
     ///     .build()?;
     /// # drop(client);
@@ -853,7 +853,7 @@ impl Client {
     /// instead of panicking.
     ///
     /// This method also panics if called from within an async runtime. See docs
-    /// on [`reqwest::blocking`][crate::blocking] for details.
+    /// on [`cf_reqwest::blocking`][crate::blocking] for details.
     pub fn new() -> Client {
         ClientBuilder::new().build().expect("Client::new()")
     }

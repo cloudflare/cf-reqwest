@@ -359,10 +359,10 @@ impl RequestBuilder {
     /// # Example
     ///
     /// ```no_run
-    /// # use reqwest::Error;
+    /// # use cf_reqwest::Error;
     /// #
     /// # async fn run() -> Result<(), Error> {
-    /// let response = reqwest::Client::new()
+    /// let response = cf_reqwest::Client::new()
     ///     .get("https://hyper.rs")
     ///     .send()
     ///     .await?;
@@ -381,10 +381,10 @@ impl RequestBuilder {
     /// # Examples
     ///
     /// ```no_run
-    /// # use reqwest::Error;
+    /// # use cf_reqwest::Error;
     /// #
     /// # fn run() -> Result<(), Error> {
-    /// let client = reqwest::Client::new();
+    /// let client = cf_reqwest::Client::new();
     /// let builder = client.post("http://httpbin.org/post")
     ///     .body("from a &str!");
     /// let clone = builder.try_clone();

@@ -703,7 +703,7 @@ impl ClientBuilder {
     /// # Example
     ///
     /// ```rust
-    /// # async fn doc() -> Result<(), reqwest::Error> {
+    /// # async fn doc() -> Result<(), cf_reqwest::Error> {
     /// // Name your user agent after your app?
     /// static APP_USER_AGENT: &str = concat!(
     ///     env!("CARGO_PKG_NAME"),
@@ -711,7 +711,7 @@ impl ClientBuilder {
     ///     env!("CARGO_PKG_VERSION"),
     /// );
     ///
-    /// let client = reqwest::Client::builder()
+    /// let client = cf_reqwest::Client::builder()
     ///     .user_agent(APP_USER_AGENT)
     ///     .build()?;
     /// let res = client.get("https://www.rust-lang.org").send().await?;
@@ -738,8 +738,8 @@ impl ClientBuilder {
     /// # Example
     ///
     /// ```rust
-    /// use reqwest::header;
-    /// # async fn doc() -> Result<(), reqwest::Error> {
+    /// use cf_reqwest::header;
+    /// # async fn doc() -> Result<(), cf_reqwest::Error> {
     /// let mut headers = header::HeaderMap::new();
     /// headers.insert("X-MY-HEADER", header::HeaderValue::from_static("value"));
     ///
@@ -749,7 +749,7 @@ impl ClientBuilder {
     /// headers.insert(header::AUTHORIZATION, auth_value);
     ///
     /// // get a client builder
-    /// let client = reqwest::Client::builder()
+    /// let client = cf_reqwest::Client::builder()
     ///     .default_headers(headers)
     ///     .build()?;
     /// let res = client.get("https://www.rust-lang.org").send().await?;
@@ -760,13 +760,13 @@ impl ClientBuilder {
     /// Override the default headers:
     ///
     /// ```rust
-    /// use reqwest::header;
-    /// # async fn doc() -> Result<(), reqwest::Error> {
+    /// use cf_reqwest::header;
+    /// # async fn doc() -> Result<(), cf_reqwest::Error> {
     /// let mut headers = header::HeaderMap::new();
     /// headers.insert("X-MY-HEADER", header::HeaderValue::from_static("value"));
     ///
     /// // get a client builder
-    /// let client = reqwest::Client::builder()
+    /// let client = cf_reqwest::Client::builder()
     ///     .default_headers(headers)
     ///     .build()?;
     /// let res = client
@@ -1198,7 +1198,7 @@ impl ClientBuilder {
     /// ```
     /// use std::net::IpAddr;
     /// let local_addr = IpAddr::from([12, 4, 1, 8]);
-    /// let client = reqwest::Client::builder()
+    /// let client = cf_reqwest::Client::builder()
     ///     .local_address(local_addr)
     ///     .build().unwrap();
     /// ```

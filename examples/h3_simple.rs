@@ -6,11 +6,11 @@
 #[cfg(feature = "http3")]
 #[cfg(not(target_arch = "wasm32"))]
 #[tokio::main]
-async fn main() -> Result<(), reqwest::Error> {
+async fn main() -> Result<(), cf_reqwest::Error> {
+    use cf_reqwest::{Client, IntoUrl, Response};
     use http::Version;
-    use reqwest::{Client, IntoUrl, Response};
 
-    async fn get<T: IntoUrl + Clone>(url: T) -> reqwest::Result<Response> {
+    async fn get<T: IntoUrl + Clone>(url: T) -> cf_reqwest::Result<Response> {
         Client::builder()
             .http3_prior_knowledge()
             .build()?
