@@ -1,9 +1,9 @@
-# reqwest
+# cf-reqwest
 
-[![crates.io](https://img.shields.io/crates/v/reqwest.svg)](https://crates.io/crates/reqwest)
-[![Documentation](https://docs.rs/reqwest/badge.svg)](https://docs.rs/reqwest)
-[![MIT/Apache-2 licensed](https://img.shields.io/crates/l/reqwest.svg)](./LICENSE-APACHE)
-[![CI](https://github.com/seanmonstar/reqwest/workflows/CI/badge.svg)](https://github.com/seanmonstar/reqwest/actions?query=workflow%3ACI)
+[![crates.io](https://img.shields.io/crates/v/cf-reqwest.svg)](https://crates.io/crates/cf-reqwest)
+[![Documentation](https://docs.rs/cf-reqwest/badge.svg)](https://docs.rs/cf-reqwest)
+[![MIT/Apache-2 licensed](https://img.shields.io/crates/l/cf-reqwest.svg)](./LICENSE-APACHE)
+[![CI](https://github.com/seanmonstar/cf-reqwest/workflows/CI/badge.svg)](https://github.com/seanmonstar/cf-reqwest/actions?query=workflow%3ACI)
 
 An ergonomic, batteries-included HTTP Client for Rust.
 
@@ -15,6 +15,13 @@ An ergonomic, batteries-included HTTP Client for Rust.
 - WASM
 - [Changelog](CHANGELOG.md)
 
+## About this fork
+
+This is a fork of the great [reqwest](https://github.com/seanmonstar/reqwest) with some features that were not accepted to the upstream:
+
+- Custom request connectors (https://github.com/seanmonstar/reqwest/pull/1786)
+
+We advice to use the upstream version of the library, unless you need any of those features.
 
 ## Example
 
@@ -76,7 +83,6 @@ On Windows and macOS:
 Reqwest uses [rust-native-tls](https://github.com/sfackler/rust-native-tls),
 which will use the operating system TLS framework if available, meaning Windows
 and macOS. On Linux, it will use OpenSSL 1.1.
-
 
 ## License
 
