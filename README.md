@@ -3,7 +3,7 @@
 [![crates.io](https://img.shields.io/crates/v/cf-reqwest.svg)](https://crates.io/crates/cf-reqwest)
 [![Documentation](https://docs.rs/cf-reqwest/badge.svg)](https://docs.rs/cf-reqwest)
 [![MIT/Apache-2 licensed](https://img.shields.io/crates/l/cf-reqwest.svg)](./LICENSE-APACHE)
-[![CI](https://github.com/seanmonstar/cf-reqwest/workflows/CI/badge.svg)](https://github.com/seanmonstar/cf-reqwest/actions?query=workflow%3ACI)
+[![CI](https://github.com/cloudflare/cf-reqwest/workflows/CI/badge.svg)](https://github.com/cloudflare/cf-reqwest/actions?query=workflow%3ACI)
 
 An ergonomic, batteries-included HTTP Client for Rust.
 
