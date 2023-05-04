@@ -60,7 +60,7 @@ impl Form {
     /// # Examples
     ///
     /// ```
-    /// let form = reqwest::multipart::Form::new()
+    /// let form = cf_reqwest::multipart::Form::new()
     ///     .text("username", "seanmonstar")
     ///     .text("password", "secret");
     /// ```
