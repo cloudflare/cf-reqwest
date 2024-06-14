@@ -179,7 +179,7 @@ impl Proxy {
     /// # Example
     ///
     /// ```
-    /// # extern crate reqwest;
+    /// # extern crate cf_reqwest;
     /// # fn run() -> Result<(), Box<std::error::Error>> {
     /// let client = cf_reqwest::Client::builder()
     ///     .proxy(cf_reqwest::Proxy::http("https://my.prox")?)
@@ -199,7 +199,7 @@ impl Proxy {
     /// # Example
     ///
     /// ```
-    /// # extern crate reqwest;
+    /// # extern crate cf_reqwest;
     /// # fn run() -> Result<(), Box<std::error::Error>> {
     /// let client = cf_reqwest::Client::builder()
     ///     .proxy(cf_reqwest::Proxy::https("https://example.prox:4545")?)
@@ -219,7 +219,7 @@ impl Proxy {
     /// # Example
     ///
     /// ```
-    /// # extern crate reqwest;
+    /// # extern crate cf_reqwest;
     /// # fn run() -> Result<(), Box<std::error::Error>> {
     /// let client = cf_reqwest::Client::builder()
     ///     .proxy(cf_reqwest::Proxy::all("http://pro.xy")?)
@@ -239,7 +239,7 @@ impl Proxy {
     /// # Example
     ///
     /// ```
-    /// # extern crate reqwest;
+    /// # extern crate cf_reqwest;
     /// # fn run() -> Result<(), Box<std::error::Error>> {
     /// let target = cf_reqwest::Url::parse("https://my.prox")?;
     /// let client = cf_reqwest::Client::builder()
@@ -289,7 +289,7 @@ impl Proxy {
     /// # Example
     ///
     /// ```
-    /// # extern crate reqwest;
+    /// # extern crate cf_reqwest;
     /// # fn run() -> Result<(), Box<std::error::Error>> {
     /// let proxy = cf_reqwest::Proxy::https("http://localhost:1234")?
     ///     .basic_auth("Aladdin", "open sesame");
@@ -307,7 +307,7 @@ impl Proxy {
     /// # Example
     ///
     /// ```
-    /// # extern crate reqwest;
+    /// # extern crate cf_reqwest;
     /// # fn run() -> Result<(), Box<std::error::Error>> {
     /// let proxy = cf_reqwest::Proxy::https("http://localhost:1234")?
     ///     .no_proxy(cf_reqwest::NoProxy::from_string("direct.tld, sub.direct2.tld"));
@@ -1862,7 +1862,7 @@ mod test {
 
                 #[test]
                 fn invalid_domain_character() {
-                    check_parse_error("http://abc 123/", url::ParseError::InvalidDomainCharacter);
+                    check_parse_error("http://abc 123/", url::ParseError::IdnaError);
                 }
             }
         }

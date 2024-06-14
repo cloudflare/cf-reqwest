@@ -208,7 +208,7 @@ impl Response {
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate reqwest;
+    /// # extern crate cf_reqwest;
     /// # extern crate serde;
     /// #
     /// # use cf_reqwest::Error;
@@ -273,7 +273,7 @@ impl Response {
     /// # Example
     ///
     /// ```rust
-    /// # extern crate reqwest;
+    /// # extern crate cf_reqwest;
     /// # fn run() -> Result<(), Box<std::error::Error>> {
     /// let content = cf_reqwest::blocking::get("http://httpbin.org/range/26")?.text()?;
     /// # Ok(())
@@ -296,7 +296,7 @@ impl Response {
     /// # Example
     ///
     /// ```rust
-    /// # extern crate reqwest;
+    /// # extern crate cf_reqwest;
     /// # fn run() -> Result<(), Box<std::error::Error>> {
     /// let content = cf_reqwest::blocking::get("http://httpbin.org/range/26")?
     ///     .text_with_charset("utf-8")?;
@@ -344,7 +344,7 @@ impl Response {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # extern crate reqwest;
+    /// # extern crate cf_reqwest;
     /// # fn run() -> Result<(), Box<std::error::Error>> {
     /// let res = cf_reqwest::blocking::get("http://httpbin.org/status/400")?
     ///     .error_for_status();
@@ -375,7 +375,7 @@ impl Response {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # extern crate reqwest;
+    /// # extern crate cf_reqwest;
     /// # fn run() -> Result<(), Box<std::error::Error>> {
     /// let res = cf_reqwest::blocking::get("http://httpbin.org/status/400")?;
     /// let res = res.error_for_status_ref();

@@ -200,7 +200,7 @@ impl Response {
     /// # Examples
     ///
     /// ```
-    /// # extern crate reqwest;
+    /// # extern crate cf_reqwest;
     /// # extern crate serde;
     /// #
     /// # use cf_reqwest::Error;
