@@ -28,7 +28,7 @@ use winreg::RegKey;
 /// For instance, let's look at `Proxy::http`:
 ///
 /// ```rust
-/// # fn run() -> Result<(), Box<std::error::Error>> {
+/// # fn run() -> Result<(), Box<dyn std::error::Error>> {
 /// let proxy = cf_reqwest::Proxy::http("https://secure.example")?;
 /// # Ok(())
 /// # }
@@ -45,7 +45,7 @@ use winreg::RegKey;
 ///
 /// By enabling the `"socks"` feature it is possible to use a socks proxy:
 /// ```rust
-/// # fn run() -> Result<(), Box<std::error::Error>> {
+/// # fn run() -> Result<(), Box<dyn std::error::Error>> {
 /// let proxy = cf_reqwest::Proxy::http("socks5://192.168.1.1:9000")?;
 /// # Ok(())
 /// # }
@@ -128,14 +128,11 @@ impl<S: IntoUrl> IntoProxyScheme for S {
                 let mut source = e.source();
                 while let Some(err) = source {
                     if let Some(parse_error) = err.downcast_ref::<url::ParseError>() {
-                        match parse_error {
-                            url::ParseError::RelativeUrlWithoutBase => {
-                                presumed_to_have_scheme = false;
-                                break;
-                            }
-                            _ => {}
+                        if url::ParseError::RelativeUrlWithoutBase == *parse_error {
+                            presumed_to_have_scheme = false;
+                            break;
                         }
-                    } else if let Some(_) = err.downcast_ref::<crate::error::BadScheme>() {
+                    } else if err.downcast_ref::<crate::error::BadScheme>().is_some() {
                         presumed_to_have_scheme = false;
                         break;
                     }
@@ -179,8 +176,8 @@ impl Proxy {
     /// # Example
     ///
     /// ```
-    /// # extern crate reqwest;
-    /// # fn run() -> Result<(), Box<std::error::Error>> {
+    /// # extern crate cf_reqwest;
+    /// # fn run() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = cf_reqwest::Client::builder()
     ///     .proxy(cf_reqwest::Proxy::http("https://my.prox")?)
     ///     .build()?;
@@ -199,8 +196,8 @@ impl Proxy {
     /// # Example
     ///
     /// ```
-    /// # extern crate reqwest;
-    /// # fn run() -> Result<(), Box<std::error::Error>> {
+    /// # extern crate cf_reqwest;
+    /// # fn run() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = cf_reqwest::Client::builder()
     ///     .proxy(cf_reqwest::Proxy::https("https://example.prox:4545")?)
     ///     .build()?;
@@ -219,8 +216,8 @@ impl Proxy {
     /// # Example
     ///
     /// ```
-    /// # extern crate reqwest;
-    /// # fn run() -> Result<(), Box<std::error::Error>> {
+    /// # extern crate cf_reqwest;
+    /// # fn run() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = cf_reqwest::Client::builder()
     ///     .proxy(cf_reqwest::Proxy::all("http://pro.xy")?)
     ///     .build()?;
@@ -239,8 +236,8 @@ impl Proxy {
     /// # Example
     ///
     /// ```
-    /// # extern crate reqwest;
-    /// # fn run() -> Result<(), Box<std::error::Error>> {
+    /// # extern crate cf_reqwest;
+    /// # fn run() -> Result<(), Box<dyn std::error::Error>> {
     /// let target = cf_reqwest::Url::parse("https://my.prox")?;
     /// let client = cf_reqwest::Client::builder()
     ///     .proxy(cf_reqwest::Proxy::custom(move |url| {
@@ -289,8 +286,8 @@ impl Proxy {
     /// # Example
     ///
     /// ```
-    /// # extern crate reqwest;
-    /// # fn run() -> Result<(), Box<std::error::Error>> {
+    /// # extern crate cf_reqwest;
+    /// # fn run() -> Result<(), Box<dyn std::error::Error>> {
     /// let proxy = cf_reqwest::Proxy::https("http://localhost:1234")?
     ///     .basic_auth("Aladdin", "open sesame");
     /// # Ok(())
@@ -307,8 +304,8 @@ impl Proxy {
     /// # Example
     ///
     /// ```
-    /// # extern crate reqwest;
-    /// # fn run() -> Result<(), Box<std::error::Error>> {
+    /// # extern crate cf_reqwest;
+    /// # fn run() -> Result<(), Box<dyn std::error::Error>> {
     /// let proxy = cf_reqwest::Proxy::https("http://localhost:1234")?
     ///     .no_proxy(cf_reqwest::NoProxy::from_string("direct.tld, sub.direct2.tld"));
     /// # Ok(())
@@ -607,12 +604,12 @@ impl ProxyScheme {
         match self {
             ProxyScheme::Http { ref mut auth, .. } => {
                 if auth.is_none() {
-                    *auth = update.clone();
+                    auth.clone_from(update);
                 }
             }
             ProxyScheme::Https { ref mut auth, .. } => {
                 if auth.is_none() {
-                    *auth = update.clone();
+                    auth.clone_from(update);
                 }
             }
             #[cfg(feature = "socks")]
@@ -729,11 +726,14 @@ impl Intercept {
     }
 }
 
+type CustomInterceptFn =
+    Arc<dyn Fn(&Url) -> Option<crate::Result<ProxyScheme>> + Send + Sync + 'static>;
+
 #[derive(Clone)]
 struct Custom {
     // This auth only applies if the returned ProxyScheme doesn't have an auth...
     auth: Option<HeaderValue>,
-    func: Arc<dyn Fn(&Url) -> Option<crate::Result<ProxyScheme>> + Send + Sync + 'static>,
+    func: CustomInterceptFn,
 }
 
 impl Custom {
@@ -804,6 +804,7 @@ fn get_sys_proxies(
         RegistryProxyValues,
     >,
 ) -> SystemProxyMap {
+    #[allow(clippy::let_and_return)]
     let proxies = get_from_environment();
 
     // TODO: move the following #[cfg] to `if expression` when attributes on `if` expressions allowed
@@ -1862,7 +1863,7 @@ mod test {
 
                 #[test]
                 fn invalid_domain_character() {
-                    check_parse_error("http://abc 123/", url::ParseError::InvalidDomainCharacter);
+                    check_parse_error("http://abc 123/", url::ParseError::IdnaError);
                 }
             }
         }

@@ -41,7 +41,7 @@ use std::collections::HashMap;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let resp = reqwest::get("https://httpbin.org/ip")
+    let resp = cf_reqwest::get("https://httpbin.org/ip")
         .await?
         .json::<HashMap<String, String>>()
         .await?;
@@ -63,7 +63,7 @@ reqwest = { version = "0.11", features = ["blocking", "json"] }
 use std::collections::HashMap;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let resp = reqwest::blocking::get("https://httpbin.org/ip")?
+    let resp = cf_reqwest::blocking::get("https://httpbin.org/ip")?
         .json::<HashMap<String, String>>()?;
     println!("{:#?}", resp);
     Ok(())

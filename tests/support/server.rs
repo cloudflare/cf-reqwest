@@ -5,11 +5,8 @@ use std::net;
 use std::sync::mpsc as std_mpsc;
 use std::thread;
 use std::time::Duration;
-
-use tokio::sync::oneshot;
-
-pub use http::Response;
 use tokio::runtime;
+use tokio::sync::oneshot;
 
 pub struct Server {
     addr: net::SocketAddr,

@@ -117,7 +117,7 @@
 
 ## v0.11.3
 
-- Add `impl From<hyper::Body> for reqwest::Body`.
+- Add `impl From<hyper::Body> for cf_reqwest::Body`.
 - (wasm) Add credentials mode methods to `RequestBuilder`.
 
 ## v0.11.2
@@ -178,8 +178,8 @@
 
 - Add `NO_PROXY` environment variable support.
 - Add more `Error::{is_request, is_body, is_decode}` getters.
-- Add conversion of `reqwest::ClientBuilder` to `reqwest::blocking::ClientBuilder`.
-- Add `headers_mut()` to `reqwest::blocking::Response`.
+- Add conversion of `cf_reqwest::ClientBuilder` to `cf_reqwest::blocking::ClientBuilder`.
+- Add `headers_mut()` to `cf_reqwest::blocking::Response`.
 - (wasm) Add `form()`, `query()`, `multipart` and `bearer_auth()` to `RequestBuilder`.
 
 ## v0.10.6
@@ -196,14 +196,14 @@
 - Implement `TryFrom<http::Request>` for `blocking::Request`.
 - Implement `TryFrom<http::Request>` for `Request`.
   - Removes `From<http::Request>` for `Request`.
-  - This is technically a breaking change, but was a mistake. It was not valid to convert from an `http::Request` to a `reqwest::Request` in an infallible fashion. It would panic if the conversion was not possible. Instead, the implementation has been changed to `TryFrom` to indicate it could fail.
+  - This is technically a breaking change, but was a mistake. It was not valid to convert from an `http::Request` to a `cf_reqwest::Request` in an infallible fashion. It would panic if the conversion was not possible. Instead, the implementation has been changed to `TryFrom` to indicate it could fail.
 
 ## v0.10.4
 
 - Add `trust-dns` optional feature to change DNS resolver.
-- Add `bytes()` method to `reqwest::blocking::Response`.
-- Add `buffer()` method to `reqwest::blocking::Body`.
-- Implement `From<http::Request>` for `reqwest::Request`.
+- Add `bytes()` method to `cf_reqwest::blocking::Response`.
+- Add `buffer()` method to `cf_reqwest::blocking::Body`.
+- Implement `From<http::Request>` for `cf_reqwest::Request`.
 
 ## v0.10.3
 
@@ -235,19 +235,19 @@
 - Add `Response::bytes_stream()` method to get body as an `impl Stream`.
 - Add `Request::try_clone()` method.
 
-- Change default `Client` API to async. The previous blocking client API is available at `reqwest::blocking`.
+- Change default `Client` API to async. The previous blocking client API is available at `cf_reqwest::blocking`.
 - Change to no longer send a default `User-Agent` header. Add one via `ClientBuilder::user_agent()`.
 - Change to enable system/environment proxy detection by default.
 - Change `default-tls` feature to only include `ClientBuilder` options that both `native-tls` and `rustls` support.
 - Change default feature set to reduce unnecessary dependencies. Most features are disabled by default:
-  - `blocking`: The `reqwest::blocking` (synchronous) client API.
+  - `blocking`: The `cf_reqwest::blocking` (synchronous) client API.
   - `cookies`: Cookie store support.
   - `gzip`: Automatic response body decompression.
   - `json`: Request and response JSON body methods.
   - `stream`: `futures::Stream` support.
 - Change `Error` internal design, removing several `Error::is_*` inspector methods.
 - Change Redirect API:
-  - Renamed types to be part of the `redirect` module (for example, `reqwest::RedirectPolicy` is now `reqwest::redirect::Policy`).
+  - Renamed types to be part of the `redirect` module (for example, `cf_reqwest::RedirectPolicy` is now `cf_reqwest::redirect::Policy`).
   - Removed `loop_detected` and `too_many_redirect` methods from `redirect::Attempt`, replaced with a generic `error` method.
   - The default policy no longer specifically looks for redirect loops (but they should be caught by the maximum limit).
 
@@ -364,13 +364,13 @@
 - Add `Proxy::basic_auth` method to support proxy authorization.
 - Add `rustls-tls` optional feature to use rustls instead of native-tls.
 - Add `try_clone` method to `Request` and `RequestBuilder`.
-- Add `reqwest::async::multipart` support, similar to the synchronous API.
+- Add `cf_reqwest::async::multipart` support, similar to the synchronous API.
 - Adds `default-tls-vendored` optional feature to vendor OpenSSL.
 
 ### Fixes
 
-- Fix panic from top-level `reqwest::get` if client builder fails to build.
-- Removed timeout waiting for `reqwest::Client` runtime to startup.
+- Fix panic from top-level `cf_reqwest::get` if client builder fails to build.
+- Removed timeout waiting for `cf_reqwest::Client` runtime to startup.
 - Fix `RequestBuilder::headers` to properly append extra headers of the same name.
 
 
@@ -433,7 +433,7 @@
 - Add `RequestBuilder::bearer_auth(token)` to ease sending bearer tokens.
 - Add `headers()` and `headers_mut()` to `multipart::Part` to allow sending
   extra headers for a specific part.
-- Moved `request::unstable::async` to `reqwest::async`.
+- Moved `request::unstable::async` to `cf_reqwest::async`.
 
 ### Fixes
 
@@ -468,8 +468,8 @@
 
   See the previous note about `ClientBuilder` for affected code and
   how to change it.
-- Removed the `unstable` cargo-feature, and moved `reqwest::unstable::async`
-  to `reqwest::async`.
+- Removed the `unstable` cargo-feature, and moved `cf_reqwest::unstable::async`
+  to `cf_reqwest::async`.
 - Changed `multipart::Part::mime()` to `mime_str()`.
 
   ```rust
@@ -513,7 +513,7 @@
   ```rust
   client
       .get("https://hyper.rs")
-      .header_011(reqwest::hyper_011::header::UserAgent::new("hallo"))
+      .header_011(cf_reqwest::hyper_011::header::UserAgent::new("hallo"))
       .send()?;
   ```
 
@@ -581,7 +581,7 @@
 - GZIP decoding has been added to the **async** Client (#161)
 - `ClientBuilder` and `RequestBuilder` hold their errors till consumed (#189)
 - `async::Response::body()` now returns a reference to the body instead of consuming the `Response`
-- A default timeout for `reqwest::Client` is used set to 30 seconds (#181)
+- A default timeout for `cf_reqwest::Client` is used set to 30 seconds (#181)
 
 ### Breaking Changes
 
@@ -594,7 +594,7 @@
 
   To get errors back immediately, the `Request` type can be used directly, by building pieces separately and calling setters.
 - `async::Response::body()` now returns a reference to the body instead of consuming the `Response`.
-- A default timeout for `reqwest::Client` is used set to 30 seconds (#181)
+- A default timeout for `cf_reqwest::Client` is used set to 30 seconds (#181)
 
   For uses where the timeout is too short, it can be changed on the `ClientBuilder`, using the `timeout` method. Passing `None` will disable the timeout, reverting to the pre-0.8 behavior.
 
@@ -635,7 +635,7 @@
   - Synchronous `Client` remains.
   - Timeouts now affect DNS and socket connection.
   - Pool much better at evicting sockets when they die.
-  - An `unstable` Cargo feature to enable `reqwest::unstable::async`.
+  - An `unstable` Cargo feature to enable `cf_reqwest::unstable::async`.
 - A huge docs improvement! 
 
 ### Fixes
@@ -683,7 +683,7 @@
 ### Breaking Changes
 
 - The publicly exposed peer dependency serde was upgraded. It is now `serde@1.0`. Mismatched version will give a compiler error that a serde trait is not implemented.
-- `Error` is no longer an `enum`, but an opaque struct. Details about it can be checked with `std::error::Error::cause()`, and methods on `reqwest::Error` include `is_http()`, `is_serialization()`, and `is_redirect()`.
+- `Error` is no longer an `enum`, but an opaque struct. Details about it can be checked with `std::error::Error::cause()`, and methods on `cf_reqwest::Error` include `is_http()`, `is_serialization()`, and `is_redirect()`.
 - `RedirectPolicy::custom` receives different arguments, and returns different values. See the [docs](https://docs.rs/reqwest/0.6.0/reqwest/struct.RedirectPolicy.html#method.custom) for an example.
 
 ## v0.5.2
@@ -706,7 +706,7 @@
 - Specify a timeout for requests using `client.timeout(duration)`. (https://github.com/seanmonstar/reqwest/commit/ec049fefbae7355f6e4ddbbc7ebedcadb30e1e04)
 - Request bodies with a known length can be constructed with `Body::sized()` (https://github.com/seanmonstar/reqwest/commit/82f1877d4b6cba2fac432670ec306160aee5c501)
 - Add `Client.put`, `Client.patch`, and `Client.delete` convenience methods (https://github.com/seanmonstar/reqwest/commit/c37b8aa0338ac4142763d206c6df79856915056d, https://github.com/seanmonstar/reqwest/commit/4d6582d22b23c27927e481a9c8a83ad08cfd1a2a, https://github.com/seanmonstar/reqwest/commit/a3983f3122b2d1495ea36bb5a8fd019a7605ae56)
-- Add `reqwest::mime` (https://github.com/seanmonstar/reqwest/commit/0615c6d65e03ba9cb5364169c9e74f4f2a91554b)
+- Add `cf_reqwest::mime` (https://github.com/seanmonstar/reqwest/commit/0615c6d65e03ba9cb5364169c9e74f4f2a91554b)
 
 ### Breaking Changes
 
