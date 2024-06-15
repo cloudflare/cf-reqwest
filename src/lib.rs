@@ -12,8 +12,8 @@
 //! It handles many of the things that most people just expect an HTTP client
 //! to do for them.
 //!
-//! - Async and [blocking](blocking) Clients
-//! - Plain bodies, [JSON](#json), [urlencoded](#forms), [multipart](multipart)
+//! - Async and [blocking] Clients
+//! - Plain bodies, [JSON](#json), [urlencoded](#forms), [multipart]
 //! - Customizable [redirect policy](#redirect-policies)
 //! - HTTP [Proxies](#proxies)
 //! - Uses system-native [TLS](#tls)
@@ -138,7 +138,7 @@
 //! `HTTP_PROXY` or `http_proxy` provide http proxies for http connections while
 //! `HTTPS_PROXY` or `https_proxy` provide HTTPS proxies for HTTPS connections.
 //!
-//! These can be overwritten by adding a [`Proxy`](Proxy) to `ClientBuilder`
+//! These can be overwritten by adding a [`Proxy`] to `ClientBuilder`
 //! i.e. `let proxy = cf_reqwest::Proxy::http("https://secure.example")?;`
 //! or disabled by calling `ClientBuilder::no_proxy()`.
 //!
@@ -155,9 +155,9 @@
 //! Security-Framework on macOS, and OpenSSL on Linux.
 //!
 //! - Additional X509 certificates can be configured on a `ClientBuilder` with the
-//!   [`Certificate`](Certificate) type.
+//!   [`Certificate`] type.
 //! - Client certificates can be added to a `ClientBuilder` with the
-//!   [`Identity`][Identity] type.
+//!   [`Identity`] type.
 //! - Various parts of TLS can also be configured or even disabled on the
 //!   `ClientBuilder`.
 //!

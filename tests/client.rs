@@ -18,7 +18,7 @@ use http::header::CONTENT_TYPE;
 #[cfg(feature = "json")]
 use std::collections::HashMap;
 
-use reqwest::{Client, GenericConnection};
+use cf_reqwest::{Client, GenericConnection};
 
 #[tokio::test]
 async fn auto_headers() {
