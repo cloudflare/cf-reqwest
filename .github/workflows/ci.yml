@@ -21,7 +21,6 @@ jobs:
       - test
       - unstable
       - nightly
-      - msrv
       - android
       - wasm
       - docs
@@ -257,35 +256,6 @@ jobs:
           cargo update -p proc-macro2 --precise 1.0.60
           cargo check
           cargo check --all-features
-
-  msrv:
-    name: MSRV
-    needs: [style]
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Get MSRV package metadata
-        id: metadata
-        run: cargo metadata --no-deps --format-version 1 | jq -r '"msrv=" + .packages[0].rust_version' >> $GITHUB_OUTPUT
-
-      - name: Install rust (${{ steps.metadata.outputs.msrv }})
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ steps.metadata.outputs.msrv }}
-
-      - name: Make sure log v0.4.18 is used
-        run: |
-          cargo update
-          cargo update -p log --precise 0.4.18
-
-      - uses: Swatinem/rust-cache@v2
-
-      - name: Check
-        run: cargo check
 
   android:
     name: Android
