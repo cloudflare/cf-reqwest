@@ -144,12 +144,9 @@ impl<S: IntoUrl> IntoProxyScheme for S {
                 let mut source = e.source();
                 while let Some(err) = source {
                     if let Some(parse_error) = err.downcast_ref::<url::ParseError>() {
-                        match parse_error {
-                            url::ParseError::RelativeUrlWithoutBase => {
-                                presumed_to_have_scheme = false;
-                                break;
-                            }
-                            _ => {}
+                        if url::ParseError::RelativeUrlWithoutBase == *parse_error {
+                            presumed_to_have_scheme = false;
+                            break;
                         }
                     } else if let Some(_) = err.downcast_ref::<crate::error::BadScheme>() {
                         presumed_to_have_scheme = false;
@@ -657,12 +654,12 @@ impl ProxyScheme {
         match self {
             ProxyScheme::Http { ref mut auth, .. } => {
                 if auth.is_none() {
-                    *auth = update.clone();
+                    auth.clone_from(update)
                 }
             }
             ProxyScheme::Https { ref mut auth, .. } => {
                 if auth.is_none() {
-                    *auth = update.clone();
+                    auth.clone_from(update)
                 }
             }
             #[cfg(feature = "socks")]
@@ -790,11 +787,14 @@ impl Intercept {
     }
 }
 
+type CustomInterceptFn =
+    Arc<dyn Fn(&Url) -> Option<crate::Result<ProxyScheme>> + Send + Sync + 'static>;
+
 #[derive(Clone)]
 struct Custom {
     // This auth only applies if the returned ProxyScheme doesn't have an auth...
     auth: Option<HeaderValue>,
-    func: Arc<dyn Fn(&Url) -> Option<crate::Result<ProxyScheme>> + Send + Sync + 'static>,
+    func: CustomInterceptFn,
 }
 
 impl Custom {

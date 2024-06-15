@@ -500,6 +500,7 @@ impl fmt::Debug for TlsBackend {
     }
 }
 
+#[allow(clippy::derivable_impls)]
 impl Default for TlsBackend {
     fn default() -> TlsBackend {
         #[cfg(all(feature = "default-tls", not(feature = "http3")))]
