@@ -186,7 +186,6 @@ impl Service<Uri> for BaseConnector {
 
 #[derive(Clone)]
 enum Inner {
-    #[cfg(not(feature = "__tls"))]
     Plaintext(BaseConnector),
     #[cfg(feature = "default-tls")]
     DefaultTls(BaseConnector, TlsConnector),
@@ -199,12 +198,12 @@ enum Inner {
 }
 
 impl Connector {
-    #[cfg(not(feature = "__tls"))]
     pub(crate) fn new<T>(
         mut base: BaseConnector,
         proxies: Arc<Vec<Proxy>>,
         local_addr: T,
         nodelay: bool,
+        enforce_http: bool,
     ) -> Connector
     where
         T: Into<Option<IpAddr>>,
@@ -212,6 +211,7 @@ impl Connector {
         if let BaseConnector::Http(ref mut http) = base {
             http.set_local_address(local_addr.into());
             http.set_nodelay(nodelay);
+            http.enforce_http(enforce_http);
         }
 
         Connector {
@@ -219,6 +219,10 @@ impl Connector {
             verbose: verbose::OFF,
             proxies,
             timeout: None,
+            #[cfg(feature = "__tls")]
+            nodelay,
+            #[cfg(feature = "__tls")]
+            user_agent: None,
         }
     }
 
@@ -363,7 +367,6 @@ impl Connector {
                     });
                 }
             }
-            #[cfg(not(feature = "__tls"))]
             Inner::Plaintext(_) => (),
         }
 
@@ -375,7 +378,6 @@ impl Connector {
 
     async fn connect_with_maybe_proxy(self, dst: Uri, is_proxy: bool) -> Result<Conn, BoxError> {
         match self.inner {
-            #[cfg(not(feature = "__tls"))]
             Inner::Plaintext(mut http) => {
                 let io = http.call(dst).await?;
                 Ok(Conn {
@@ -531,7 +533,6 @@ impl Connector {
                     });
                 }
             }
-            #[cfg(not(feature = "__tls"))]
             Inner::Plaintext(_) => (),
         }
 
@@ -547,7 +548,6 @@ impl Connector {
                 base: BaseConnector::Http(http),
                 ..
             } => http.set_keepalive(dur),
-            #[cfg(not(feature = "__tls"))]
             Inner::Plaintext(BaseConnector::Http(http)) => http.set_keepalive(dur),
             _ => (),
         }
