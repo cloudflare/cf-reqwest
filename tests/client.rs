@@ -85,6 +85,39 @@ async fn user_agent() {
 }
 
 #[tokio::test]
+async fn enforce_plaintext() {
+    let server = server::http(move |_req| async { http::Response::new("Hello".into()) });
+
+    let url = format!("http://{}/text", server.addr());
+
+    let res = cf_reqwest::Client::builder()
+        .enforce_plaintext(true)
+        .build()
+        .expect("client builder")
+        .get(&url)
+        .send()
+        .await
+        .expect("request");
+
+    let text = res.text().await.expect("Failed to get text");
+    assert_eq!("Hello", text);
+
+    let url = format!("https://{}/text", server.addr());
+
+    let res = cf_reqwest::Client::builder()
+        .enforce_plaintext(true)
+        .build()
+        .expect("client builder")
+        .get(&url)
+        .send()
+        .await
+        .expect("request");
+
+    let text = res.text().await.expect("Failed to get text");
+    assert_eq!("Hello", text);
+}
+
+#[tokio::test]
 async fn response_text() {
     let _ = env_logger::try_init();
 
