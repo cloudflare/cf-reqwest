@@ -136,6 +136,7 @@ struct Config {
     trust_dns: bool,
     error: Option<crate::Error>,
     https_only: bool,
+    enforce_plaintext: bool,
     #[cfg(feature = "http3")]
     tls_enable_early_data: bool,
     #[cfg(feature = "http3")]
@@ -219,6 +220,7 @@ impl ClientBuilder {
                 #[cfg(feature = "cookies")]
                 cookie_store: None,
                 https_only: false,
+                enforce_plaintext: false,
                 dns_overrides: HashMap::new(),
                 #[cfg(feature = "http3")]
                 tls_enable_early_data: false,
@@ -337,279 +339,298 @@ impl ClientBuilder {
                     }
                 };
 
-            #[cfg(feature = "__tls")]
-            match config.tls {
-                #[cfg(feature = "default-tls")]
-                TlsBackend::Default => {
-                    let mut tls = TlsConnector::builder();
+            if config.enforce_plaintext && config.https_only {
+                return Err(error::builder(
+                    "`enforce_plaintext` and `https_only` options are mutually exclusive",
+                ));
+            }
 
-                    #[cfg(all(feature = "native-tls-alpn", not(feature = "http3")))]
-                    {
-                        match config.http_version_pref {
-                            HttpVersionPref::Http1 => {
-                                tls.request_alpns(&["http/1.1"]);
-                            }
-                            HttpVersionPref::Http2 => {
-                                tls.request_alpns(&["h2"]);
-                            }
-                            HttpVersionPref::All => {
-                                tls.request_alpns(&["h2", "http/1.1"]);
-                            }
-                        }
-                    }
-
-                    #[cfg(feature = "native-tls")]
-                    {
-                        tls.danger_accept_invalid_hostnames(!config.hostname_verification);
-                    }
-
-                    tls.danger_accept_invalid_certs(!config.certs_verification);
-
-                    tls.use_sni(config.tls_sni);
-
-                    tls.disable_built_in_roots(!config.tls_built_in_root_certs);
-
-                    for cert in config.root_certs {
-                        cert.add_to_native_tls(&mut tls);
-                    }
-
-                    #[cfg(feature = "native-tls")]
-                    {
-                        if let Some(id) = config.identity {
-                            id.add_to_native_tls(&mut tls)?;
-                        }
-                    }
-                    #[cfg(all(feature = "__rustls", not(feature = "native-tls")))]
-                    {
-                        // Default backend + rustls Identity doesn't work.
-                        if let Some(_id) = config.identity {
-                            return Err(crate::error::builder("incompatible TLS identity type"));
-                        }
-                    }
-
-                    if let Some(min_tls_version) = config.min_tls_version {
-                        let protocol = min_tls_version.to_native_tls().ok_or_else(|| {
-                            // TLS v1.3. This would be entirely reasonable,
-                            // native-tls just doesn't support it.
-                            // https://github.com/sfackler/rust-native-tls/issues/140
-                            crate::error::builder("invalid minimum TLS version for backend")
-                        })?;
-                        tls.min_protocol_version(Some(protocol));
-                    }
-
-                    if let Some(max_tls_version) = config.max_tls_version {
-                        let protocol = max_tls_version.to_native_tls().ok_or_else(|| {
-                            // TLS v1.3.
-                            // We could arguably do max_protocol_version(None), given
-                            // that 1.4 does not exist yet, but that'd get messy in the
-                            // future.
-                            crate::error::builder("invalid maximum TLS version for backend")
-                        })?;
-                        tls.max_protocol_version(Some(protocol));
-                    }
-
-                    Connector::new_default_tls(
-                        base_connector,
-                        tls,
-                        proxies.clone(),
-                        user_agent(&config.headers),
-                        config.local_address,
-                        config.nodelay,
-                    )?
-                }
-                #[cfg(feature = "native-tls")]
-                TlsBackend::BuiltNativeTls(conn) => Connector::from_built_default_tls(
+            if config.enforce_plaintext {
+                Connector::new(
                     base_connector,
-                    conn,
                     proxies.clone(),
-                    user_agent(&config.headers),
                     config.local_address,
                     config.nodelay,
-                ),
-                #[cfg(feature = "__rustls")]
-                TlsBackend::BuiltRustls(conn) => {
-                    #[cfg(feature = "http3")]
-                    {
-                        h3_connector = build_h3_connector(
-                            resolver,
-                            conn.clone(),
-                            config.quic_max_idle_timeout,
-                            config.quic_stream_receive_window,
-                            config.quic_receive_window,
-                            config.quic_send_window,
-                            config.local_address,
-                            &config.http_version_pref,
-                        )?;
-                    }
+                    !config.enforce_plaintext,
+                )
+            } else {
+                #[cfg(feature = "__tls")]
+                match config.tls {
+                    #[cfg(feature = "default-tls")]
+                    TlsBackend::Default => {
+                        let mut tls = TlsConnector::builder();
 
-                    Connector::new_rustls_tls(
+                        #[cfg(all(feature = "native-tls-alpn", not(feature = "http3")))]
+                        {
+                            match config.http_version_pref {
+                                HttpVersionPref::Http1 => {
+                                    tls.request_alpns(&["http/1.1"]);
+                                }
+                                HttpVersionPref::Http2 => {
+                                    tls.request_alpns(&["h2"]);
+                                }
+                                HttpVersionPref::All => {
+                                    tls.request_alpns(&["h2", "http/1.1"]);
+                                }
+                            }
+                        }
+
+                        #[cfg(feature = "native-tls")]
+                        {
+                            tls.danger_accept_invalid_hostnames(!config.hostname_verification);
+                        }
+
+                        tls.danger_accept_invalid_certs(!config.certs_verification);
+
+                        tls.use_sni(config.tls_sni);
+
+                        tls.disable_built_in_roots(!config.tls_built_in_root_certs);
+
+                        for cert in config.root_certs {
+                            cert.add_to_native_tls(&mut tls);
+                        }
+
+                        #[cfg(feature = "native-tls")]
+                        {
+                            if let Some(id) = config.identity {
+                                id.add_to_native_tls(&mut tls)?;
+                            }
+                        }
+                        #[cfg(all(feature = "__rustls", not(feature = "native-tls")))]
+                        {
+                            // Default backend + rustls Identity doesn't work.
+                            if let Some(_id) = config.identity {
+                                return Err(crate::error::builder(
+                                    "incompatible TLS identity type",
+                                ));
+                            }
+                        }
+
+                        if let Some(min_tls_version) = config.min_tls_version {
+                            let protocol = min_tls_version.to_native_tls().ok_or_else(|| {
+                                // TLS v1.3. This would be entirely reasonable,
+                                // native-tls just doesn't support it.
+                                // https://github.com/sfackler/rust-native-tls/issues/140
+                                crate::error::builder("invalid minimum TLS version for backend")
+                            })?;
+                            tls.min_protocol_version(Some(protocol));
+                        }
+
+                        if let Some(max_tls_version) = config.max_tls_version {
+                            let protocol = max_tls_version.to_native_tls().ok_or_else(|| {
+                                // TLS v1.3.
+                                // We could arguably do max_protocol_version(None), given
+                                // that 1.4 does not exist yet, but that'd get messy in the
+                                // future.
+                                crate::error::builder("invalid maximum TLS version for backend")
+                            })?;
+                            tls.max_protocol_version(Some(protocol));
+                        }
+
+                        Connector::new_default_tls(
+                            base_connector,
+                            tls,
+                            proxies.clone(),
+                            user_agent(&config.headers),
+                            config.local_address,
+                            config.nodelay,
+                        )?
+                    }
+                    #[cfg(feature = "native-tls")]
+                    TlsBackend::BuiltNativeTls(conn) => Connector::from_built_default_tls(
                         base_connector,
                         conn,
                         proxies.clone(),
                         user_agent(&config.headers),
                         config.local_address,
                         config.nodelay,
-                    )
-                }
-                #[cfg(feature = "__rustls")]
-                TlsBackend::Rustls => {
-                    use crate::tls::NoVerifier;
-
-                    // Set root certificates.
-                    let mut root_cert_store = rustls::RootCertStore::empty();
-                    for cert in config.root_certs {
-                        cert.add_to_rustls(&mut root_cert_store)?;
-                    }
-
-                    #[cfg(feature = "rustls-tls-webpki-roots")]
-                    if config.tls_built_in_root_certs {
-                        use rustls::OwnedTrustAnchor;
-
-                        let trust_anchors =
-                            webpki_roots::TLS_SERVER_ROOTS.iter().map(|trust_anchor| {
-                                OwnedTrustAnchor::from_subject_spki_name_constraints(
-                                    trust_anchor.subject,
-                                    trust_anchor.spki,
-                                    trust_anchor.name_constraints,
-                                )
-                            });
-
-                        root_cert_store.add_trust_anchors(trust_anchors);
-                    }
-
-                    #[cfg(feature = "rustls-tls-native-roots")]
-                    if config.tls_built_in_root_certs {
-                        let mut valid_count = 0;
-                        let mut invalid_count = 0;
-                        for cert in rustls_native_certs::load_native_certs()
-                            .map_err(crate::error::builder)?
+                    ),
+                    #[cfg(feature = "__rustls")]
+                    TlsBackend::BuiltRustls(conn) => {
+                        #[cfg(feature = "http3")]
                         {
-                            let cert = rustls::Certificate(cert.0);
-                            // Continue on parsing errors, as native stores often include ancient or syntactically
-                            // invalid certificates, like root certificates without any X509 extensions.
-                            // Inspiration: https://github.com/rustls/rustls/blob/633bf4ba9d9521a95f68766d04c22e2b01e68318/rustls/src/anchors.rs#L105-L112
-                            match root_cert_store.add(&cert) {
-                                Ok(_) => valid_count += 1,
-                                Err(err) => {
-                                    invalid_count += 1;
-                                    log::warn!(
-                                        "rustls failed to parse DER certificate {:?} {:?}",
-                                        &err,
-                                        &cert
-                                    );
+                            h3_connector = build_h3_connector(
+                                resolver,
+                                conn.clone(),
+                                config.quic_max_idle_timeout,
+                                config.quic_stream_receive_window,
+                                config.quic_receive_window,
+                                config.quic_send_window,
+                                config.local_address,
+                                &config.http_version_pref,
+                            )?;
+                        }
+
+                        Connector::new_rustls_tls(
+                            base_connector,
+                            conn,
+                            proxies.clone(),
+                            user_agent(&config.headers),
+                            config.local_address,
+                            config.nodelay,
+                        )
+                    }
+                    #[cfg(feature = "__rustls")]
+                    TlsBackend::Rustls => {
+                        use crate::tls::NoVerifier;
+
+                        // Set root certificates.
+                        let mut root_cert_store = rustls::RootCertStore::empty();
+                        for cert in config.root_certs {
+                            cert.add_to_rustls(&mut root_cert_store)?;
+                        }
+
+                        #[cfg(feature = "rustls-tls-webpki-roots")]
+                        if config.tls_built_in_root_certs {
+                            use rustls::OwnedTrustAnchor;
+
+                            let trust_anchors =
+                                webpki_roots::TLS_SERVER_ROOTS.iter().map(|trust_anchor| {
+                                    OwnedTrustAnchor::from_subject_spki_name_constraints(
+                                        trust_anchor.subject,
+                                        trust_anchor.spki,
+                                        trust_anchor.name_constraints,
+                                    )
+                                });
+
+                            root_cert_store.add_trust_anchors(trust_anchors);
+                        }
+
+                        #[cfg(feature = "rustls-tls-native-roots")]
+                        if config.tls_built_in_root_certs {
+                            let mut valid_count = 0;
+                            let mut invalid_count = 0;
+                            for cert in rustls_native_certs::load_native_certs()
+                                .map_err(crate::error::builder)?
+                            {
+                                let cert = rustls::Certificate(cert.0);
+                                // Continue on parsing errors, as native stores often include ancient or syntactically
+                                // invalid certificates, like root certificates without any X509 extensions.
+                                // Inspiration: https://github.com/rustls/rustls/blob/633bf4ba9d9521a95f68766d04c22e2b01e68318/rustls/src/anchors.rs#L105-L112
+                                match root_cert_store.add(&cert) {
+                                    Ok(_) => valid_count += 1,
+                                    Err(err) => {
+                                        invalid_count += 1;
+                                        log::warn!(
+                                            "rustls failed to parse DER certificate {:?} {:?}",
+                                            &err,
+                                            &cert
+                                        );
+                                    }
                                 }
                             }
-                        }
-                        if valid_count == 0 && invalid_count > 0 {
-                            return Err(crate::error::builder(
-                                "zero valid certificates found in native root store",
-                            ));
-                        }
-                    }
-
-                    // Set TLS versions.
-                    let mut versions = rustls::ALL_VERSIONS.to_vec();
-
-                    if let Some(min_tls_version) = config.min_tls_version {
-                        versions.retain(|&supported_version| {
-                            match tls::Version::from_rustls(supported_version.version) {
-                                Some(version) => version >= min_tls_version,
-                                // Assume it's so new we don't know about it, allow it
-                                // (as of writing this is unreachable)
-                                None => true,
+                            if valid_count == 0 && invalid_count > 0 {
+                                return Err(crate::error::builder(
+                                    "zero valid certificates found in native root store",
+                                ));
                             }
-                        });
-                    }
+                        }
 
-                    if let Some(max_tls_version) = config.max_tls_version {
-                        versions.retain(|&supported_version| {
-                            match tls::Version::from_rustls(supported_version.version) {
-                                Some(version) => version <= max_tls_version,
-                                None => false,
+                        // Set TLS versions.
+                        let mut versions = rustls::ALL_VERSIONS.to_vec();
+
+                        if let Some(min_tls_version) = config.min_tls_version {
+                            versions.retain(|&supported_version| {
+                                match tls::Version::from_rustls(supported_version.version) {
+                                    Some(version) => version >= min_tls_version,
+                                    // Assume it's so new we don't know about it, allow it
+                                    // (as of writing this is unreachable)
+                                    None => true,
+                                }
+                            });
+                        }
+
+                        if let Some(max_tls_version) = config.max_tls_version {
+                            versions.retain(|&supported_version| {
+                                match tls::Version::from_rustls(supported_version.version) {
+                                    Some(version) => version <= max_tls_version,
+                                    None => false,
+                                }
+                            });
+                        }
+
+                        // Build TLS config
+                        let config_builder = rustls::ClientConfig::builder()
+                            .with_safe_default_cipher_suites()
+                            .with_safe_default_kx_groups()
+                            .with_protocol_versions(&versions)
+                            .map_err(crate::error::builder)?
+                            .with_root_certificates(root_cert_store);
+
+                        // Finalize TLS config
+                        let mut tls = if let Some(id) = config.identity {
+                            id.add_to_rustls(config_builder)?
+                        } else {
+                            config_builder.with_no_client_auth()
+                        };
+
+                        // Certificate verifier
+                        if !config.certs_verification {
+                            tls.dangerous()
+                                .set_certificate_verifier(Arc::new(NoVerifier));
+                        }
+
+                        tls.enable_sni = config.tls_sni;
+
+                        // ALPN protocol
+                        match config.http_version_pref {
+                            HttpVersionPref::Http1 => {
+                                tls.alpn_protocols = vec!["http/1.1".into()];
                             }
-                        });
-                    }
-
-                    // Build TLS config
-                    let config_builder = rustls::ClientConfig::builder()
-                        .with_safe_default_cipher_suites()
-                        .with_safe_default_kx_groups()
-                        .with_protocol_versions(&versions)
-                        .map_err(crate::error::builder)?
-                        .with_root_certificates(root_cert_store);
-
-                    // Finalize TLS config
-                    let mut tls = if let Some(id) = config.identity {
-                        id.add_to_rustls(config_builder)?
-                    } else {
-                        config_builder.with_no_client_auth()
-                    };
-
-                    // Certificate verifier
-                    if !config.certs_verification {
-                        tls.dangerous()
-                            .set_certificate_verifier(Arc::new(NoVerifier));
-                    }
-
-                    tls.enable_sni = config.tls_sni;
-
-                    // ALPN protocol
-                    match config.http_version_pref {
-                        HttpVersionPref::Http1 => {
-                            tls.alpn_protocols = vec!["http/1.1".into()];
+                            HttpVersionPref::Http2 => {
+                                tls.alpn_protocols = vec!["h2".into()];
+                            }
+                            #[cfg(feature = "http3")]
+                            HttpVersionPref::Http3 => {
+                                tls.alpn_protocols = vec!["h3".into()];
+                            }
+                            HttpVersionPref::All => {
+                                tls.alpn_protocols = vec!["h2".into(), "http/1.1".into()];
+                            }
                         }
-                        HttpVersionPref::Http2 => {
-                            tls.alpn_protocols = vec!["h2".into()];
-                        }
+
                         #[cfg(feature = "http3")]
-                        HttpVersionPref::Http3 => {
-                            tls.alpn_protocols = vec!["h3".into()];
-                        }
-                        HttpVersionPref::All => {
-                            tls.alpn_protocols = vec!["h2".into(), "http/1.1".into()];
-                        }
-                    }
+                        {
+                            tls.enable_early_data = config.tls_enable_early_data;
 
-                    #[cfg(feature = "http3")]
-                    {
-                        tls.enable_early_data = config.tls_enable_early_data;
+                            h3_connector = build_h3_connector(
+                                resolver,
+                                tls.clone(),
+                                config.quic_max_idle_timeout,
+                                config.quic_stream_receive_window,
+                                config.quic_receive_window,
+                                config.quic_send_window,
+                                config.local_address,
+                                &config.http_version_pref,
+                            )?;
+                        }
 
-                        h3_connector = build_h3_connector(
-                            resolver,
-                            tls.clone(),
-                            config.quic_max_idle_timeout,
-                            config.quic_stream_receive_window,
-                            config.quic_receive_window,
-                            config.quic_send_window,
+                        Connector::new_rustls_tls(
+                            base_connector,
+                            tls,
+                            proxies.clone(),
+                            user_agent(&config.headers),
                             config.local_address,
-                            &config.http_version_pref,
-                        )?;
+                            config.nodelay,
+                        )
                     }
+                    #[cfg(any(feature = "native-tls", feature = "__rustls",))]
+                    TlsBackend::UnknownPreconfigured => {
+                        return Err(crate::error::builder(
+                            "Unknown TLS backend passed to `use_preconfigured_tls`",
+                        ));
+                    }
+                }
 
-                    Connector::new_rustls_tls(
-                        base_connector,
-                        tls,
-                        proxies.clone(),
-                        user_agent(&config.headers),
-                        config.local_address,
-                        config.nodelay,
-                    )
-                }
-                #[cfg(any(feature = "native-tls", feature = "__rustls",))]
-                TlsBackend::UnknownPreconfigured => {
-                    return Err(crate::error::builder(
-                        "Unknown TLS backend passed to `use_preconfigured_tls`",
-                    ));
-                }
+                #[cfg(not(feature = "__tls"))]
+                Connector::new(
+                    base_connector,
+                    proxies.clone(),
+                    config.local_address,
+                    config.nodelay,
+                    !config.enforce_plaintext,
+                )
             }
-
-            #[cfg(not(feature = "__tls"))]
-            Connector::new(
-                base_connector,
-                proxies.clone(),
-                config.local_address,
-                config.nodelay,
-            )
         };
 
         connector.set_timeout(config.connect_timeout);
@@ -1531,6 +1552,14 @@ impl ClientBuilder {
     /// Defaults to false.
     pub fn https_only(mut self, enabled: bool) -> ClientBuilder {
         self.config.https_only = enabled;
+        self
+    }
+
+    /// Enforce the Client to send plaintext even to HTTPS URLs.
+    ///
+    /// Defaults to false.
+    pub fn enforce_plaintext(mut self, enabled: bool) -> ClientBuilder {
+        self.config.enforce_plaintext = enabled;
         self
     }
 
