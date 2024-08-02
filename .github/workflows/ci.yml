@@ -60,7 +60,6 @@ jobs:
       matrix:
         name:
           - linux / stable
-          - linux / beta
           # - linux / nightly
           - macOS / stable
           - windows / stable-x86_64-msvc
@@ -86,9 +85,6 @@ jobs:
 
         include:
           - name: linux / stable
-            test-features: "--features __internal_proxy_sys_no_cache"
-          - name: linux / beta
-            rust: beta
             test-features: "--features __internal_proxy_sys_no_cache"
           # - name: linux / nightly
           #   rust: nightly

@@ -1670,6 +1670,7 @@ mod test {
             false
         }
 
+        #[track_caller]
         fn check_parse_error(url: &str, needle: url::ParseError) {
             let error = Proxy::http(url).unwrap_err();
             if !includes(&error, needle) {
@@ -1863,7 +1864,7 @@ mod test {
 
                 #[test]
                 fn invalid_domain_character() {
-                    check_parse_error("http://abc 123/", url::ParseError::IdnaError);
+                    check_parse_error("http://abc 123/", url::ParseError::InvalidDomainCharacter);
                 }
             }
         }
