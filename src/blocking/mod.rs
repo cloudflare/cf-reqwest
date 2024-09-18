@@ -25,7 +25,7 @@
 //! let body = cf_reqwest::blocking::get("https://www.rust-lang.org")?
 //!     .text()?;
 //!
-//! println!("body = {:?}", body);
+//! println!("body = {body:?}");
 //! # Ok(())
 //! # }
 //! ```
@@ -36,8 +36,7 @@
 //! acceptable.
 //!
 //! **NOTE**: If you plan to perform multiple requests, it is best to create a
-//! [`Client`] and reuse it, taking advantage of keep-alive connection
-//! pooling.
+//! [`Client`] and reuse it, taking advantage of keep-alive connection pooling.
 //!
 //! # Making POST requests (or setting request bodies)
 //!

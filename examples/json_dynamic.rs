@@ -21,7 +21,7 @@ async fn main() -> Result<(), cf_reqwest::Error> {
         .json()
         .await?;
 
-    println!("{:#?}", echo_json);
+    println!("{echo_json:#?}");
     // Object(
     //     {
     //         "body": String(

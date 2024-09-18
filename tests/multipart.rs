@@ -1,6 +1,6 @@
 #![cfg(not(target_arch = "wasm32"))]
 mod support;
-use futures_util::stream::StreamExt;
+use http_body_util::BodyExt;
 use support::server;
 
 #[tokio::test]
@@ -33,8 +33,8 @@ async fn text_part() {
             );
 
             let mut full: Vec<u8> = Vec::new();
-            while let Some(item) = req.body_mut().next().await {
-                full.extend(&*item.unwrap());
+            while let Some(item) = req.body_mut().frame().await {
+                full.extend(&*item.unwrap().into_data().unwrap());
             }
 
             assert_eq!(full, expected_body.as_bytes());
@@ -90,7 +90,7 @@ async fn stream_part() {
 
     let ct = format!("multipart/form-data; boundary={}", form.boundary());
 
-    let server = server::http(move |mut req| {
+    let server = server::http(move |req| {
         let ct = ct.clone();
         let expected_body = expected_body.clone();
         async move {
@@ -98,10 +98,7 @@ async fn stream_part() {
             assert_eq!(req.headers()["content-type"], ct);
             assert_eq!(req.headers()["transfer-encoding"], "chunked");
 
-            let mut full: Vec<u8> = Vec::new();
-            while let Some(item) = req.body_mut().next().await {
-                full.extend(&*item.unwrap());
-            }
+            let full = req.collect().await.unwrap().to_bytes();
 
             assert_eq!(full, expected_body.as_bytes());
 
@@ -148,7 +145,7 @@ fn blocking_file_part() {
 
     let ct = format!("multipart/form-data; boundary={}", form.boundary());
 
-    let server = server::http(move |mut req| {
+    let server = server::http(move |req| {
         let ct = ct.clone();
         let expected_body = expected_body.clone();
         async move {
@@ -160,10 +157,7 @@ fn blocking_file_part() {
                 expected_body.len().to_string()
             );
 
-            let mut full: Vec<u8> = Vec::new();
-            while let Some(item) = req.body_mut().next().await {
-                full.extend(&*item.unwrap());
-            }
+            let full = req.collect().await.unwrap().to_bytes();
 
             assert_eq!(full, expected_body.as_bytes());
 
